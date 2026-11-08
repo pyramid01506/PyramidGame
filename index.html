@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#101018">
+<title>Pyramid Game</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --bg:#0b0c13;--panel:#151724;--panel2:#1c2030;--line:#30364b;
+  --gold:#e9bd62;--gold2:#f6d994;--text:#f5f3ee;--muted:#a6aabd;
+  --green:#7ed6a4;--red:#ff8585;--shadow:0 18px 50px #0007;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;min-height:100vh;color:var(--text);
+  background:radial-gradient(ellipse at 50% -15%,#30304a 0%,transparent 50%),var(--bg);
+  font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+button,input{font:inherit}
+button{cursor:pointer}
+.shell{width:min(960px,100%);margin:auto;padding:22px 16px 48px}
+.topbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:22px}
+.brand{display:flex;align-items:center;gap:12px}
+.logo{width:42px;height:42px;display:grid;place-items:center;border:1px solid #92713c;border-radius:12px;color:var(--gold);font-size:23px;background:#211d19}
+.brand h1{font-size:16px;letter-spacing:.18em;margin:0}
+.brand small{display:block;color:var(--muted);font-size:10px;letter-spacing:.16em;margin-top:3px}
+.pill{border:1px solid var(--line);border-radius:99px;padding:7px 11px;color:var(--muted);font-size:11px;letter-spacing:.08em}
+.card{background:linear-gradient(145deg,#191c2b,#121521);border:1px solid var(--line);border-radius:20px;padding:clamp(18px,4vw,30px);box-shadow:var(--shadow)}
+.hero{text-align:center;padding:24px 12px 28px}
+.hero-mark{width:112px;height:100px;margin:0 auto 18px;position:relative}
+.hero-mark:before{content:"";position:absolute;left:12px;right:12px;top:3px;height:90px;background:linear-gradient(150deg,#f7dc9c,#a87530);clip-path:polygon(50% 0,100% 100%,0 100%);opacity:.95}
+.hero-mark:after{content:"";position:absolute;left:29px;right:29px;top:39px;height:54px;background:#171927;clip-path:polygon(50% 0,100% 100%,0 100%)}
+.eyebrow{color:var(--gold);font-size:11px;letter-spacing:.22em;text-transform:uppercase}
+h2{font-size:clamp(25px,5vw,38px);margin:9px 0 8px}
+.sub{color:var(--muted);line-height:1.6;font-size:14px;max-width:570px;margin:0 auto}
+.form{max-width:390px;margin:24px auto 0;text-align:left}
+label.field{display:block;color:var(--muted);font-size:12px;margin:13px 0 7px}
+input[type=text],input[type=password]{
+ width:100%;background:#0d101a;border:1px solid #34394d;color:var(--text);
+ padding:14px;border-radius:11px;outline:none
+}
+input:focus{border-color:var(--gold);box-shadow:0 0 0 3px #e9bd621c}
+.password-wrap{position:relative}
+.password-wrap input{padding-right:54px}
+.eye-btn{position:absolute;right:7px;top:50%;transform:translateY(-50%);width:40px;height:38px;border:0;border-radius:8px;background:#252a3a;color:var(--text);font-size:18px}
+.eye-btn:focus{outline:2px solid var(--gold);outline-offset:2px}
+.eye-btn svg{width:20px;height:20px;display:block;margin:auto;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.remember-row{display:flex;align-items:center;gap:8px;margin-top:13px;color:var(--muted);font-size:12px}
+.remember-row input{accent-color:var(--gold)}
+.btn{border:0;border-radius:11px;padding:13px 17px;font-weight:750;letter-spacing:.04em}
+.btn-gold{background:linear-gradient(135deg,var(--gold2),#c8943e);color:#21180b}
+.btn-dark{background:#292e40;color:var(--text);border:1px solid #424960}
+.btn-danger{background:#48252c;color:#ffd9dc;border:1px solid #75404a}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.full{width:100%;margin-top:16px}
+.message{min-height:20px;color:var(--red);font-size:12px;margin-top:10px}
+.notice{font-size:12px;color:var(--muted);line-height:1.55;margin-top:18px}
+.hidden{display:none!important}
+.section-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+.section-head h2{font-size:25px;margin:0}
+.section-head p{color:var(--muted);font-size:13px;margin:7px 0 0}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:18px 0}
+.stat{background:#101421;border:1px solid var(--line);padding:14px;border-radius:13px}
+.stat b{display:block;font-size:22px;color:var(--gold)}
+.stat span{font-size:11px;color:var(--muted)}
+.players{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:15px}
+.player{
+ display:flex;align-items:center;justify-content:space-between;gap:10px;
+ background:#101421;border:1px solid #34394d;padding:13px;border-radius:13px;
+ transition:.15s
+}
+.player.selected{border-color:var(--gold);background:#292317}
+.player.self{opacity:.45}
+.player-name{font-weight:650;font-size:14px}
+.player-note{font-size:10px;color:var(--muted);margin-top:3px}
+.check{width:22px;height:22px;accent-color:#d7a94f;flex:none}
+.counter{color:var(--gold);font-weight:800}
+.rules{background:#101421;border:1px solid var(--line);padding:15px;border-radius:13px;color:var(--muted);font-size:12px;line-height:1.7}
+.rules strong{color:var(--text)}
+.terms{margin-top:18px;border-top:1px solid var(--line);padding-top:18px}
+.terms label{display:flex;align-items:flex-start;gap:10px;color:#d8d9e2;font-size:13px;line-height:1.55}
+.terms input{margin-top:3px;accent-color:var(--gold)}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+.actions .btn{flex:1;min-width:150px}
+.status{display:inline-flex;align-items:center;gap:7px;border-radius:99px;padding:7px 10px;font-size:11px;border:1px solid var(--line);color:var(--muted)}
+.vote-timer{display:inline-flex;align-items:center;gap:7px;border:1px solid #92713c;background:#211d19;color:var(--gold2);border-radius:99px;padding:7px 11px;font-size:12px;font-weight:850;font-variant-numeric:tabular-nums;letter-spacing:.06em;margin-top:10px}.vote-timer.urgent{color:#ff9a9a;border-color:#87505a;background:#301d24}
+.dot{width:7px;height:7px;border-radius:50%;background:#858b9d}
+.dot.on{background:var(--green);box-shadow:0 0 12px #7ed6a4aa}
+.result-row{display:flex;align-items:center;gap:12px;padding:13px;background:#101421;border:1px solid var(--line);border-radius:12px;margin:8px 0}
+.rank{width:28px;height:28px;border-radius:9px;display:grid;place-items:center;background:#292b38;color:var(--gold);font-weight:800}
+.result-row:first-child .rank{background:#5a4523;color:#ffe4a5}
+.result-name{flex:1;font-weight:650}
+.result-votes{color:var(--gold);font-weight:800}
+.footer{text-align:center;color:#72788c;font-size:10px;letter-spacing:.1em;margin-top:22px}
+.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#252b3c;border:1px solid #596078;color:white;padding:12px 17px;border-radius:12px;box-shadow:var(--shadow);font-size:13px;z-index:10;max-width:90%;text-align:center}
+
+.pyramid-wrap{display:flex;flex-direction:column;align-items:center;gap:8px;margin:20px auto 4px}
+.pyramid-tier{width:100%;display:flex;justify-content:center;gap:8px;align-items:stretch}
+.tier-a{max-width:180px}.tier-b{max-width:330px}.tier-c{max-width:490px}.tier-d{max-width:650px}.tier-f{max-width:810px}
+.pyramid-tier{width:min(100%,810px);margin-inline:auto}
+.tier-a{width:22.2%}.tier-b{width:40.7%}.tier-c{width:60.5%}.tier-d{width:80.2%}.tier-f{width:100%}
+@media(max-width:560px){.tier-card{padding:10px 4px}.tier-player{font-size:10px}.tier-letter{font-size:16px}.tier-score{font-size:9px}}
+.tier-card{flex:1;min-width:0;text-align:center;border-radius:12px;padding:12px 7px;border:1px solid var(--line);background:#111522}
+.tier-letter{font-size:19px;font-weight:900;letter-spacing:.12em}
+.tier-a .tier-card{background:linear-gradient(145deg,#59431f,#292114);border-color:#b18a45}
+.tier-b .tier-card{background:#263348;border-color:#526d94}
+.tier-c .tier-card{background:#263a35;border-color:#527d6b}
+.tier-d .tier-card{background:#343142;border-color:#625b79}
+.tier-f .tier-card{background:#40272e;border-color:#87505a}
+.tier-a .tier-letter{color:#ffe2a0}.tier-b .tier-letter{color:#b9d5ff}
+.tier-c .tier-letter{color:#a8e3c7}.tier-d .tier-letter{color:#d2c6f5}.tier-f .tier-letter{color:#ffb6bf}
+.tier-player{font-size:12px;font-weight:700;margin-top:5px;overflow-wrap:anywhere}
+.tier-score{font-size:10px;color:var(--muted);margin-top:3px}
+.tier-caption{font-size:10px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-top:5px}
+
+@media(max-width:560px){.players{grid-template-columns:1fr}.stats{gap:7px}.stat{padding:11px}.stat b{font-size:19px}.topbar{align-items:flex-start}}
+</style>
+</head>
+<body>
+<div class="shell">
+ <div class="topbar">
+  <div class="brand"><div class="logo">♜</div><div><h1>PYRAMID GAME</h1><small>09 PLAYERS</small></div></div>
+  <div class="pill">PRIVATE GAME</div>
+ </div>
+
+ <section id="loginView" class="card">
+  <div class="hero">
+   <div class="hero-mark"></div>
+   <div class="eyebrow">One group · One ballot each</div>
+   <h2>Enter the Pyramid</h2>
+   <p class="sub">Sign in with the account assigned to you. Every player gets one private ballot.</p>
+   <div class="form">
+    <label class="field" for="username">USERNAME</label>
+    <input id="username" type="text" autocomplete="username" placeholder="Enter your username">
+    <label class="field" for="password">PASSWORD</label>
+    <div class="password-wrap">
+     <input id="password" type="password" autocomplete="current-password" placeholder="Enter your password">
+     <button type="button" class="eye-btn" id="togglePassword" aria-label="Show password" title="Show password"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 3 18 18"/><path d="M10.6 5.1A10.8 10.8 0 0 1 12 5c6.4 0 10 7 10 7a15.8 15.8 0 0 1-3.1 3.8M6.2 6.2C3.5 8 2 12 2 12s3.6 7 10 7a10.8 10.8 0 0 0 4-.8"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg></button>
+    </div>
+    <label class="remember-row"><input id="rememberMe" type="checkbox"> <span>Remember me on this device (auto-login)</span></label>
+    <button class="btn btn-gold full" id="loginBtn">LOG IN</button>
+    <div id="loginError" class="message" role="alert"></div>
+   </div>
+   <p class="notice">Your account and ballot are stored securely online. Your individual selections remain private.</p>
+  </div>
+ </section>
+
+ <section id="termsView" class="card hidden">
+  <div class="section-head"><div><div class="eyebrow">Before entering</div><h2>Terms &amp; Conditions</h2><p>Please read and agree before using the game.</p></div><span class="pill">PLAYER AGREEMENT</span></div>
+  <div class="rules">
+   <strong>1. Respect everyone.</strong> This is a friendly game among friends. No threats, harassment, bullying, retaliation, or pressure about votes.<br>
+   <strong>2. Private ballots.</strong> Do not demand to see another player's selections. The app shows totals only when the host reveals results.<br>
+   <strong>3. One vote each.</strong> Choose exactly four other players. You cannot select yourself, and you cannot change a submitted ballot.<br>
+   <strong>4. Fair play.</strong> Do not use another person's account or try to interfere with the game.<br>
+   <strong>5. Host controls.</strong> The host may open or close voting and reveal the final totals. The host also participates as a player.<br>
+   <strong>6. Trial notice.</strong> This version stores data on one browser/device. Anyone with access to that device may be able to use it. Do not use a password you use elsewhere.
+  </div>
+  <div class="terms">
+   <label><input id="agreeTerms" type="checkbox"><span>I have read and agree to these terms. I understand this is a friendly game and will treat all players respectfully.</span></label>
+   <button class="btn btn-gold full" id="continueBtn" disabled>AGREE &amp; CONTINUE</button>
+   <button class="btn btn-dark full" id="declineBtn">LOG OUT</button>
+  </div>
+ </section>
+
+ <section id="gameView" class="hidden">
+  <div class="card">
+   <div class="section-head">
+    <div><div class="eyebrow">Player dashboard</div><h2 id="welcomeName">Welcome</h2><p id="roleLine">Your ballot is private.</p></div>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px"><span class="status"><span id="statusDot" class="dot"></span><span id="statusText">VOTING CLOSED</span></span><span id="voteTimer" class="vote-timer" aria-live="polite">⏱ 02:00</span></div>
+   </div>
+   <div class="stats">
+    <div class="stat"><b>09</b><span>PLAYERS</span></div>
+    <div class="stat"><b>04</b><span>VOTES TO CAST</span></div>
+    <div class="stat"><b id="submittedStat">0/9</b><span>BALLOTS SUBMITTED</span></div>
+   </div>
+   <div class="section-head"><div><h2 style="font-size:19px">Choose four players</h2><p>Select four people other than yourself.</p></div><div class="pill"><span id="selectionCount" class="counter">0</span> / 4 SELECTED</div></div>
+   <div id="playerChoices" class="players"></div>
+   <div class="actions">
+    <button id="submitVoteBtn" class="btn btn-gold" disabled>SUBMIT MY VOTE</button>
+    <button id="logoutBtn" class="btn btn-dark">LOG OUT</button>
+   </div>
+   <div id="voteFeedback" class="notice" aria-live="polite"></div>
+  </div>
+
+  <div id="hostPanel" class="card hidden" style="margin-top:16px">
+   <div class="section-head"><div><div class="eyebrow">Host controls</div><h2 style="font-size:23px">Game management</h2><p>You can host and cast your own ballot.</p></div><span class="pill">HOST: JERSON</span></div>
+   <div class="rules">Opening voting starts a shared 1-minute countdown. Voting closes automatically when the timer reaches zero, as long as the host game page remains open. You can also close voting early.</div>
+   <div class="actions">
+    <button id="openBtn" class="btn btn-gold">OPEN VOTING</button>
+    <button id="closeBtn" class="btn btn-dark">CLOSE VOTING</button>
+    <button id="revealBtn" class="btn btn-dark">REVEAL RESULTS</button>
+    <button id="resetBtn" class="btn btn-danger">ERASE RESULTS &amp; START NEW ROUND</button>
+   </div>
+   <div id="hostMessage" class="notice"></div>
+  </div>
+
+  <div id="resultsPanel" class="card hidden" style="margin-top:16px">
+   <div class="eyebrow">Final tally</div><h2 style="font-size:24px">Pyramid Results</h2>
+   <p class="sub" style="margin:0 0 15px">These are vote totals only. Individual ballots remain private.</p>
+   <div id="resultsList"></div>
+  </div>
+ </section>
+ <div class="footer">PYRAMID GAME · PLAY FAIR</div>
+</div>
+<div id="toast" class="toast hidden"></div>
+
+<script>
+(() => {
+ "use strict";
+ // Supabase public client settings. The publishable key is safe for browser use
+ // when Row Level Security is correctly enabled on every exposed table.
+ const SUPABASE_URL = "https://dctqcoelaugynflfqkki.supabase.co";
+ const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_a7E-Z6DUMXuHOoVc22PEQg_QsvvPK0p";
+ const { createClient } = window.supabase;
+ const db = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+
+ // Login aliases must match the aliases used when the Auth users were created.
+ const players = [
+  {u:"jerson",n:"Jerson",email:"jerson@pyramid-game.example"},
+  {u:"glaiza",n:"Glaiza",email:"glaiza@pyramid-game.example"},
+  {u:"shyna",n:"Shyna Shane",email:"shyna@pyramid-game.example"},
+  {u:"sofia",n:"Sofia Mae",email:"sofia@pyramid-game.example"},
+  {u:"zyka",n:"Zyka Mae",email:"zyka@pyramid-game.example"},
+  {u:"shantal",n:"Shantal Rowse",email:"shantal@pyramid-game.example"},
+  {u:"hezelle",n:"Hezelle Key",email:"hezelle@pyramid-game.example"},
+  {u:"argine",n:"Argine",email:"argine@pyramid-game.example"},
+  {u:"angelica",n:"Angelica",email:"angelica@pyramid-game.example"}
+ ];
+ let current=null, profile=null, selected=new Set(), gameState=null, ownVote=null;
+ let channel=null, audioCtx=null, toastTimer=null, busy=false, timerInterval=null, autoCloseInFlight=false, timerEndNotifiedAt=null;
+ const $=id=>document.getElementById(id);
+ function sound(kind="tap"){
+  // Short synthesized game sounds; no external audio files are required.
+  try{
+   audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();
+   if(audioCtx.state==="suspended")audioCtx.resume();
+   const now=audioCtx.currentTime;
+   const patterns={
+    tap:[[520,0,.055]], eye:[[680,0,.07]],
+    success:[[660,0,.11],[880,.12,.16]],
+    error:[[240,0,.10],[170,.11,.14]],
+    reveal:[[523,0,.12],[659,.13,.12],[784,.26,.18],[1046,.45,.28]],
+    login:[[587,0,.10],[740,.12,.16]],
+    open:[[620,0,.08],[820,.09,.12]],
+    close:[[520,0,.08],[390,.09,.12]],
+    timerEnd:[[880,0,.16],[660,.18,.16],[880,.36,.28]]
+   };
+   (patterns[kind]||patterns.tap).forEach(([freq,delay,dur])=>{
+    const osc=audioCtx.createOscillator(),gain=audioCtx.createGain(),start=now+delay;
+    osc.type=kind==="error"?"triangle":"sine";
+    osc.frequency.setValueAtTime(freq,start);
+    gain.gain.setValueAtTime(.0001,start);
+    gain.gain.exponentialRampToValueAtTime(kind==="tap"||kind==="eye"?.045:.075,start+.012);
+    gain.gain.exponentialRampToValueAtTime(.0001,start+dur);
+    osc.connect(gain);gain.connect(audioCtx.destination);osc.start(start);osc.stop(start+dur+.02);
+   });
+  }catch(e){}
+ }
+ function toast(msg){$("toast").textContent=msg;$("toast").classList.remove("hidden");clearTimeout(toastTimer);toastTimer=setTimeout(()=>$ ("toast").classList.add("hidden"),2600);}
+ function show(view){["loginView","termsView","gameView"].forEach(id=>$(id).classList.toggle("hidden",id!==view));}
+ function setError(msg){$("loginError").textContent=msg||"";}
+ function setBusy(value){busy=value;$("loginBtn").disabled=value;$("loginBtn").textContent=value?"SIGNING IN…":"LOG IN";}
+ function friendlyError(error){const m=error?.message||"Something went wrong.";if(/invalid login credentials/i.test(m))return "Incorrect username or password.";if(/email not confirmed/i.test(m))return "This account is not confirmed. Ask the host to check its Supabase account settings.";return m;}
+ async function login(){
+  if(busy)return;
+  const u=$("username").value.trim().toLowerCase(), password=$("password").value;
+  const found=players.find(x=>x.u===u);
+  if(!found){setError("Incorrect username or password.");sound("error");return;}
+  if(!password){setError("Please enter your password.");return;}
+  setBusy(true);setError("");
+  try{
+   const {data,error}=await db.auth.signInWithPassword({email:found.email,password});
+   if(error)throw error;
+   current=found;
+   sound("login");
+   await loadProfileAndEnter();
+  }catch(e){setError(friendlyError(e));sound("error");}
+  finally{setBusy(false);}
+ }
+ async function loadProfileAndEnter(){
+  const {data:{user}}=await db.auth.getUser();
+  if(!user)throw new Error("Your session could not be verified. Please log in again.");
+  const {data,error}=await db.from("profiles").select("user_id,username,display_name,is_host").eq("user_id",user.id).single();
+  if(error)throw new Error("Your account is not linked to a game profile. Ask the host to check the player registration.");
+  profile=data;current=players.find(p=>p.u===profile.username)||{u:profile.username,n:profile.display_name};
+  selected.clear();
+  // Show the Terms & Conditions on every login so each player can read them.
+  $("agreeTerms").checked=false;
+  $("continueBtn").disabled=true;
+  show("termsView");
+ }
+ async function enterGame(){
+  if(!profile)return;
+  if(!$ ("agreeTerms").checked)return;
+  $("welcomeName").textContent="Welcome, "+profile.display_name;
+  $("roleLine").textContent=profile.is_host?"Host + Player · You can manage the round and cast your own vote.":"Player · Your ballot is private.";
+  $("hostPanel").classList.toggle("hidden",!profile.is_host);
+  show("gameView");
+  await refreshAll();
+  startVoteTimer();
+  subscribeRealtime();
+ }
+ async function refreshAll(){
+  const [{data:gs,error:ge},{data:vote,error:ve}]=await Promise.all([
+   db.from("game_state").select("id,voting_open,voting_closes_at,results_revealed,submitted_count,updated_at").eq("id",1).single(),
+   db.from("votes").select("voter_id").eq("voter_id",profile.user_id).maybeSingle()
+  ]);
+  if(ge)throw ge;if(ve)throw ve;
+  const resultsJustOpened=gameState?.results_revealed===false&&gs.results_revealed===true;
+  gameState=gs;ownVote=vote;
+  refresh();
+  if(resultsJustOpened){
+   sound("reveal");
+   toast("The results have been revealed!");
+  }
+ }
+ function subscribeRealtime(){
+  if(channel)db.removeChannel(channel);
+  channel=db.channel("pyramid-game-live")
+   .on("postgres_changes",{event:"*",schema:"public",table:"game_state"},async()=>{try{await refreshAll();}catch(e){toast("Could not refresh game status.");}})
+   .on("postgres_changes",{event:"*",schema:"public",table:"vote_tallies"},async()=>{if(gameState?.results_revealed){try{await renderResults();}catch(e){toast("Could not refresh results.");}}})
+   .subscribe();
+ }
+ function renderChoices(){
+  const box=$("playerChoices");box.innerHTML="";
+  players.forEach(p=>{
+   const self=p.u===profile.username,label=document.createElement("label");label.className="player"+(self?" self":"");
+   const info=document.createElement("div"),name=document.createElement("div"),note=document.createElement("div");
+   name.className="player-name";name.textContent=p.n+(p.u==="jerson"?" · Host":"");note.className="player-note";note.textContent=self?"You — cannot vote for yourself":"Player";info.append(name,note);
+   const cb=document.createElement("input");cb.type="checkbox";cb.className="check";cb.value=p.u;cb.disabled=self||!!ownVote||!gameState?.voting_open||gameState?.results_revealed||(gameState?.voting_closes_at&&Date.now()>=new Date(gameState.voting_closes_at).getTime());cb.checked=selected.has(p.u);
+   cb.addEventListener("change",()=>{if(cb.checked){if(selected.size>=4){cb.checked=false;sound("error");toast("You can select only four players.");return;}selected.add(p.u);}else selected.delete(p.u);sound("tap");refreshCount();});
+   label.append(info,cb);box.append(label);
+  });
+ }
+ function updateVoteTimer(){
+  const el=$("voteTimer");
+  if(!el)return;
+  if(!gameState?.voting_open||!gameState?.voting_closes_at){
+   el.textContent="⏱ 01:00";el.classList.remove("urgent");return;
+  }
+  const remaining=Math.max(0,Math.ceil((new Date(gameState.voting_closes_at).getTime()-Date.now())/1000));
+  const mm=String(Math.floor(remaining/60)).padStart(2,"0"),ss=String(remaining%60).padStart(2,"0");
+  el.textContent="⏱ "+mm+":"+ss;
+  el.classList.toggle("urgent",remaining<=20);
+  if(remaining===0){
+   renderChoices();refreshCount();
+   if(timerEndNotifiedAt!==gameState.voting_closes_at){
+    timerEndNotifiedAt=gameState.voting_closes_at;
+    sound("timerEnd");
+    toast("Time is up! Voting time has ended.");
+   }
+  }
+  if(remaining===0&&profile?.is_host&&!autoCloseInFlight){
+   autoCloseInFlight=true;
+   setOpen(false).finally(()=>{autoCloseInFlight=false;});
+  }
+ }
+ function startVoteTimer(){
+  if(timerInterval)clearInterval(timerInterval);
+  updateVoteTimer();
+  timerInterval=setInterval(updateVoteTimer,1000);
+ }
+ function refreshCount(){
+  $("selectionCount").textContent=selected.size;
+  $("submitVoteBtn").disabled=busy||selected.size!==4||!gameState?.voting_open||!!ownVote||gameState?.results_revealed||(gameState?.voting_closes_at&&Date.now()>=new Date(gameState.voting_closes_at).getTime());
+ }
+ function refresh(){
+  if(!gameState||!profile)return;
+  $("statusText").textContent=gameState.results_revealed?"RESULTS REVEALED":gameState.voting_open?"VOTING OPEN":"VOTING CLOSED";
+  $("statusDot").classList.toggle("on",gameState.voting_open&&!gameState.results_revealed);
+  updateVoteTimer();
+  $("submittedStat").textContent=gameState.submitted_count+"/9";
+  $("voteFeedback").textContent=ownVote?"Your ballot has been submitted. You cannot vote again.":gameState.results_revealed?"The host has revealed the results.":gameState.voting_open?"Voting is open. Select four players and submit once.":"Voting is closed. Wait for the host to open the round.";
+  $("hostMessage").textContent=gameState.submitted_count+" of 9 ballots submitted.";
+  $("openBtn").disabled=gameState.voting_open||gameState.results_revealed;
+  $("closeBtn").disabled=!gameState.voting_open||gameState.results_revealed;
+  $("revealBtn").disabled=gameState.results_revealed||gameState.voting_open;
+  if(gameState.results_revealed){$("resultsPanel").classList.remove("hidden");renderResults().catch(()=>toast("Could not load results."));}
+  else $("resultsPanel").classList.add("hidden");
+  renderChoices();refreshCount();
+ }
+ async function submit(){
+  if(busy||!gameState?.voting_open||gameState.results_revealed||(gameState.voting_closes_at&&Date.now()>=new Date(gameState.voting_closes_at).getTime())||ownVote||selected.size!==4)return;
+  busy=true;refreshCount();
+  try{
+   const targetIds=[];
+   for(const username of selected){const player=await db.from("profiles").select("user_id").eq("username",username).single();if(player.error)throw player.error;targetIds.push(player.data.user_id);}
+   const {error}=await db.from("votes").insert({voter_id:profile.user_id,target_ids:targetIds});
+   if(error)throw error;
+   selected.clear();sound("success");toast("Your vote has been submitted.");await refreshAll();
+  }catch(e){toast(friendlyError(e));sound("error");try{await refreshAll();}catch(_){} }
+  finally{busy=false;refreshCount();}
+ }
+ async function updateGame(changes,successMessage){
+  if(!profile?.is_host)return;
+  const {error}=await db.from("game_state").update({...changes,updated_at:new Date().toISOString()}).eq("id",1);
+  if(error){toast(friendlyError(error));return;}
+  sound("tap");toast(successMessage);await refreshAll();
+ }
+ async function setOpen(value){
+  if(!profile?.is_host||gameState?.results_revealed)return;
+  const changes=value?{voting_open:true,voting_closes_at:new Date(Date.now()+60000).toISOString()}:{voting_open:false,voting_closes_at:null};
+  await updateGame(changes,value?"Voting is open for 1 minute.":"Voting is now closed.");
+ }
+ async function reveal(){
+  if(!profile?.is_host||gameState?.voting_open||gameState?.results_revealed)return;
+  await updateGame({results_revealed:true},"Final totals revealed.");
+ }
+ async function resetRound(){
+  if(!profile?.is_host)return;
+  if(!window.confirm("Erase all ballots and revealed results, then allow everyone to vote again? This cannot be undone."))return;
+  setBusy(true);
+  try{
+   // A SECURITY DEFINER RPC clears every player's private ballot atomically.
+   const {error}=await db.rpc("reset_pyramid_round");
+   if(error)throw error;
+   selected.clear();ownVote=null;
+   sound("success");toast("Previous round erased. All players can vote again when voting opens.");
+   await refreshAll();
+  }catch(e){toast(friendlyError(e));sound("error");}
+  finally{setBusy(false);refreshCount();}
+ }
+ async function renderResults(){
+  const {data,error}=await db.from("vote_tallies").select("target_user_id,vote_count");
+  if(error)throw error;
+  const totals=Object.fromEntries(players.map(p=>[p.u,0]));
+  const idToUsername={};
+  // The profile list maps the fixed game usernames to their Supabase UUIDs.
+  const {data:profiles,error:profileError}=await db.from("profiles").select("user_id,username");
+  if(profileError)throw profileError;
+  profiles.forEach(p=>idToUsername[p.user_id]=p.username);
+  (data||[]).forEach(row=>{const u=idToUsername[row.target_user_id];if(u in totals)totals[u]=row.vote_count;});
+  const sorted=[...players].sort((a,b)=>totals[b.u]-totals[a.u]||a.n.localeCompare(b.n));
+  const bands=[{letter:"A",label:"Top rank",count:1,cls:"tier-a"},{letter:"B",label:"High rank",count:2,cls:"tier-b"},{letter:"C",label:"Middle rank",count:2,cls:"tier-c"},{letter:"D",label:"Low rank",count:2,cls:"tier-d"},{letter:"F",label:"Bottom rank",count:2,cls:"tier-f"}];
+  const root=$("resultsList");root.innerHTML="";const pyramid=document.createElement("div");pyramid.className="pyramid-wrap";let offset=0;
+  bands.forEach(band=>{const tier=document.createElement("div");tier.className="pyramid-tier "+band.cls;for(let i=0;i<band.count;i++){const p=sorted[offset++],cell=document.createElement("div");cell.className="tier-card";const letter=document.createElement("div");letter.className="tier-letter";letter.textContent=band.letter;const name=document.createElement("div");name.className="tier-player";name.textContent=p.n;const score=document.createElement("div");score.className="tier-score";score.textContent=totals[p.u]+" votes";cell.append(letter,name,score);tier.append(cell);}const wrap=document.createElement("div");wrap.style.width="100%";wrap.append(tier);const caption=document.createElement("div");caption.className="tier-caption";caption.textContent=band.label;wrap.append(caption);pyramid.append(wrap);});root.append(pyramid);
+  const note=document.createElement("p");note.className="notice";note.textContent="For this 9-player trial, placements use fixed slots: A (1), B (2), C (2), D (2), F (2). Tied vote totals are ordered alphabetically to fill the slots. Individual ballots remain private.";root.append(note);
+ }
+ async function logout(){
+  if(timerInterval){clearInterval(timerInterval);timerInterval=null;}
+  if(channel){await db.removeChannel(channel);channel=null;}
+  await db.auth.signOut();current=null;profile=null;ownVote=null;selected.clear();$("username").value="";$("password").value="";$("rememberMe").checked=false;show("loginView");
+ }
+ $("togglePassword").addEventListener("click",()=>{
+  const input=$("password"),button=$("togglePassword"),showing=input.type==="password";
+  input.type=showing?"text":"password";
+  // Update the icon as well as the input type so the visual state is never misleading.
+  button.innerHTML=showing
+   ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>'
+   : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 3 18 18"/><path d="M10.6 5.1A10.8 10.8 0 0 1 12 5c6.4 0 10 7 10 7a15.8 15.8 0 0 1-3.1 3.8M6.2 6.2C3.5 8 2 12 2 12s3.6 7 10 7a10.8 10.8 0 0 0 4-.8"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>';
+  button.setAttribute("aria-label",showing?"Hide password":"Show password");
+  button.title=showing?"Hide password":"Show password";
+  sound("eye");
+ });
+ $("loginBtn").addEventListener("click",login);
+ $("password").addEventListener("keydown",e=>{if(e.key==="Enter")login();});
+ $("rememberMe").addEventListener("change",()=>sound("tap"));
+ $("continueBtn").addEventListener("click",()=>{sound("success");enterGame().catch(e=>{sound("error");toast(friendlyError(e));});});
+ $("agreeTerms").addEventListener("change",()=>{$("continueBtn").disabled=!$("agreeTerms").checked;sound("tap");});
+ $("declineBtn").addEventListener("click",logout);
+ $("submitVoteBtn").addEventListener("click",submit);
+ $("openBtn").addEventListener("click",()=>setOpen(true));
+ $("closeBtn").addEventListener("click",()=>setOpen(false));
+ $("revealBtn").addEventListener("click",reveal);
+ $("resetBtn").addEventListener("click",resetRound);
+ $("logoutBtn").addEventListener("click",logout);
+
+ // Restore an existing Supabase session on this device.
+ (async()=>{
+  const {data:{session}}=await db.auth.getSession();
+  if(session){try{await loadProfileAndEnter();}catch(e){await db.auth.signOut();setError(friendlyError(e));}}
+ })();
+})();
+</script>
+</body>
+</html>
